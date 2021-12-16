@@ -33,7 +33,7 @@ def visualize_shape(name, shape_list, result_dir):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--h5_file', type=str, default='data/obj_models/ShapeNetCore_2048.h5', help='h5py file')
+parser.add_argument('--h5_file', type=str, default='/datasets/DATASET/NOCS/obj_models/ShapeNetCore_2048.h5', help='h5py file')
 parser.add_argument('--model', type=str, default='results/ae_points/model_50.pth',  help='resume model')
 parser.add_argument('--result_dir', type=str, default='results/ae_points', help='directory to save mean shapes')
 parser.add_argument('--gpu', type=str, default='0', help='GPU to use')

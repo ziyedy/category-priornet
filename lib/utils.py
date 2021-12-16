@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import _pickle as cPickle
 from tqdm import tqdm
+import torch
 
 
 def setup_logger(logger_name, log_file, level=logging.INFO):

@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("../")
+sys.path.append("../../")
 import lib.gcn3d as gcn3d
 
 import torch
@@ -33,8 +33,8 @@ class PriorEncoder(nn.Module):
         fm_1 = self.conv_1(neighbor_index, vertices, fm_0)
         fm_1 = F.relu(fm_1, inplace=True)
         vertices, fm_1 = self.pool_1(vertices, fm_1)
-        neighbor_index = gcn3d.get_neighbor_index(vertices, self.neighbor_num)
 
+        neighbor_index = gcn3d.get_neighbor_index(vertices, self.neighbor_num)
         fm_2 = self.conv_2(neighbor_index, vertices, fm_1)
         fm_2 = F.relu(fm_2, inplace=True)
         fm_3 = self.conv_3(neighbor_index, vertices, fm_2)

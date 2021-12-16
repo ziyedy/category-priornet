@@ -15,19 +15,19 @@ from lib.align import estimateSimilarityTransform
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='CAMERA', help='CAMERA or CAMERA+Real')
-parser.add_argument('--data_dir', type=str, default='data', help='data directory')
+parser.add_argument('--data_dir', type=str, default='/datasets/DATASET/NOCS/', help='data directory')
 parser.add_argument('--n_pts', type=int, default=1024, help='number of foreground points')
 parser.add_argument('--n_cat', type=int, default=6, help='number of object categories')
 parser.add_argument('--nv_prior', type=int, default=1024, help='number of vertices in shape priors')
 parser.add_argument('--img_size', type=int, default=192, help='cropped image size')
-parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+parser.add_argument('--batch_size', type=int, default=16, help='batch size')
 parser.add_argument('--num_workers', type=int, default=10, help='number of data loading workers')
 parser.add_argument('--gpu', type=str, default='0', help='GPU to use')
 parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
 parser.add_argument('--start_epoch', type=int, default=1, help='which epoch to start')
 parser.add_argument('--max_epoch', type=int, default=50, help='max number of epochs to train')
 parser.add_argument('--resume_model', type=str, default='', help='resume from saved model')
-parser.add_argument('--result_dir', type=str, default='results/camera', help='directory to save train results')
+parser.add_argument('--result_dir', type=str, default='results/train_camera', help='directory to save train results')
 opt = parser.parse_args()
 
 opt.decay_epoch = [0, 10, 20, 30, 40]

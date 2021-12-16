@@ -295,7 +295,8 @@ def annotate_test_data(data_dir):
                 continue
             num_insts = len(instance_ids)
             # match each instance with NOCS ground truth to properly assign gt_handle_visibility
-            nocs_dir = os.path.join(os.path.dirname(data_dir), 'results/nocs_results')
+            # nocs_dir = os.path.join(os.path.dirname(data_dir), 'results/nocs_results')
+            nocs_dir = "../results/nocs_results"
             if source == 'CAMERA':
                 nocs_path = os.path.join(nocs_dir, 'val', 'results_val_{}_{}.pkl'.format(
                     img_path.split('/')[-2], img_path.split('/')[-1]))
@@ -374,10 +375,11 @@ def annotate_test_data(data_dir):
 
 
 if __name__ == '__main__':
-    data_dir = '/home/tianmeng/Documents/pose_ws/object-deformnet/data'
+    data_dir = '/datasets/DATASET/NOCS'
+    # data_dir = '/home/tianmeng/Documents/pose_ws/object-deformnet/data'
     # create list for all data
-    create_img_list(data_dir)
+    # create_img_list(data_dir)
     # annotate dataset and re-write valid data to list
-    annotate_camera_train(data_dir)
+    # annotate_camera_train(data_dir)
     annotate_real_train(data_dir)
     annotate_test_data(data_dir)

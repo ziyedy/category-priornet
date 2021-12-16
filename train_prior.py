@@ -3,7 +3,9 @@ import time
 import argparse
 import torch
 import tensorflow as tf
+from lib.prior.prior import PriorAE
 from lib.auto_encoder import PointCloudAE
+from lib.prior.prior_loss import PriorLoss
 from lib.loss import ChamferLoss
 from data.shape_dataset import ShapeDataset
 from lib.utils import setup_logger
@@ -13,14 +15,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--num_point', type=int, default=1024, help='number of points, needed if use points')
 parser.add_argument('--emb_dim', type=int, default=512, help='dimension of latent embedding [default: 512]')
 parser.add_argument('--h5_file', type=str, default='/datasets/DATASET/NOCS/obj_models/ShapeNetCore_4096.h5', help='h5 file')
-parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+parser.add_argument('--batch_size', type=int, default=8, help='batch size')
 parser.add_argument('--num_workers', type=int, default=10, help='number of data loading workers')
 parser.add_argument('--gpu', type=str, default='0', help='GPU to use')
 parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
 parser.add_argument('--start_epoch', type=int, default=1, help='which epoch to start')
 parser.add_argument('--max_epoch', type=int, default=50, help='max number of epochs to train')
 parser.add_argument('--resume_model', type=str, default='', help='resume from saved model')
-parser.add_argument('--result_dir', type=str, default='results/ae_points', help='directory to save train results')
+parser.add_argument('--result_dir', type=str, default='results/prior_points', help='directory to save train results')
 opt = parser.parse_args()
 
 opt.repeat_epoch = 10
@@ -36,11 +38,11 @@ def train_net():
     logger = setup_logger('train_log', os.path.join(opt.result_dir, 'log.txt'))
     for key, value in vars(opt).items():
         logger.info(key + ': ' + str(value))
-    # os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu
     # model & loss
-    estimator = PointCloudAE(opt.emb_dim, opt.num_point)
-    # estimator.cuda()
-    criterion = ChamferLoss()
+    estimator = PriorAE(opt.emb_dim, opt.num_point)
+    estimator.cuda()
+    criterion = PriorLoss(1, 0.001)
     if opt.resume_model != '':
         estimator.load_state_dict(torch.load(opt.resume_model))
     # dataset
@@ -71,11 +73,14 @@ def train_net():
                 # label must be zero_indexed
                 batch_xyz, batch_label = data
                 batch_xyz = batch_xyz[:, :, :3].cuda()
+                batch_label = batch_label.view(-1, ).cuda()
                 optimizer.zero_grad()
-                embedding, point_cloud = estimator(batch_xyz)
-                loss, _, _ = criterion(point_cloud, batch_xyz)
+                embedding, pred, point_cloud = estimator(batch_xyz)
+                loss, cd_loss, classify_loss = criterion(point_cloud, batch_xyz, pred, batch_label)
                 summary = tf.Summary(value=[tf.Summary.Value(tag='learning_rate', simple_value=current_lr),
-                                            tf.Summary.Value(tag='train_loss', simple_value=loss)])
+                                            tf.Summary.Value(tag='train_loss', simple_value=loss),
+                                            tf.Summary.Value(tag='cd_loss', simple_value=cd_loss),
+                                            tf.Summary.Value(tag='classify_loss', simple_value=classify_loss)])
                 # backward
                 loss.backward()
                 optimizer.step()
@@ -84,7 +89,7 @@ def train_net():
                 # write results to tensorboard
                 tb_writer.add_summary(summary, global_step)
                 if batch_idx % 10 == 0:
-                    logger.info('Batch {0} Loss:{1:f}'.format(batch_idx, loss))
+                    logger.info('Batch {0} Loss:{1:f} cd_loss:{2:f} classify_loss:{3:f}'.format(batch_idx, loss, cd_loss, classify_loss))
         logger.info('>>>>>>>>----------Epoch {:02d} train finish---------<<<<<<<<'.format(epoch))
         # evaluate one epoch
         logger.info('Time {0}'.format(time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - st_time)) + \
@@ -94,8 +99,10 @@ def train_net():
         for i, data in enumerate(val_dataloader, 1):
             batch_xyz, batch_label = data
             batch_xyz = batch_xyz[:, :, :3].cuda()
-            embedding, point_cloud = estimator(batch_xyz)
-            loss, _, _ = criterion(point_cloud, batch_xyz)
+            batch_label = batch_label.cuda()
+            embedding, pred, point_cloud = estimator(batch_xyz)
+            # loss, _, _ = criterion(point_cloud, batch_xyz)
+            loss, _, _ = criterion(point_cloud, batch_xyz, pred, batch_label)
             val_loss += loss.item()
             logger.info('Batch {0} Loss:{1:f}'.format(i, loss))
         val_loss = val_loss / i
